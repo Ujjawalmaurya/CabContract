@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Blockchain Cab</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+</head>
+
+<body>
+    <h1>Blockchain Cab System</h1>
+
+    <div id="driver">
+        <h2>Driver Section</h2>
+        <input id="driverName" placeholder="Your name">
+        <input id="carModel" placeholder="Car model">
+        <button onclick="registerDriver()">Register as Driver</button>
+    </div>
+
+    <div id="rider">
+        <h2>Rider Section</h2>
+        <input id="pickup" placeholder="Pickup location">
+        <input id="drop" placeholder="Drop location">
+        <input id="fare" placeholder="Fare in ETH">
+        <button onclick="requestRide()">Request Ride</button>
+    </div>
+
+    <script>
+        const contractAddress = "YOUR_CONTRACT_ADDRESS";
+        const abi = [/* YOUR CONTRACT ABI */];
+
+        async function registerDriver() {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            const signer = provider.getSigner();
+            const contract = new ethers.Contract(contractAddress, abi, signer);
+
+            const name = document.getElementById("driverName").value;
+            const car = document.getElementById("carModel").value;
+
+            await contract.registerDriver(name, car);
+            alert("Registered!");
+        }
+
+        async function requestRide() {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            const signer = provider.getSigner();
+            const contract = new ethers.Contract(contractAddress, abi, signer);
+
+            const pickup = document.getElementById("pickup").value;
+            const drop = document.getElementById("drop").value;
+            const fare = document.getElementById("fare").value;
+
+            await contract.requestRide(pickup, drop, {
+                value: ethers.utils.parseEther(fare)
+            });
+            alert("Ride requested!");
+        }
+    </script>
+</body>
+
+</html>
