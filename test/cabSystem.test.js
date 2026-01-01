@@ -1,4 +1,6 @@
-const { expect } = require("chai");
+import { expect } from "chai";
+import pkg from "hardhat";
+const { ethers } = pkg;
 
 describe("CabSystem", function () {
     it("Should register driver and complete a ride", async function () {
@@ -22,6 +24,6 @@ describe("CabSystem", function () {
         await cab.connect(driver).completeRide(1);
 
         const driverInfo = await cab.drivers(driver.address);
-        expect(driverInfo.totalRides).to.equal(1);
+        expect(driverInfo.totalRides).to.equal(1n);
     });
 });

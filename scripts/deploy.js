@@ -1,7 +1,8 @@
-const hre = require("hardhat");
+import hre from "hardhat";
+const { ethers } = hre;
 
 async function main() {
-    const CabSystem = await hre.ethers.getContractFactory("CabSystem");
+    const CabSystem = await ethers.getContractFactory("CabSystem");
     const cab = await CabSystem.deploy();
     await cab.waitForDeployment();
 
