@@ -1,77 +1,70 @@
-# 🚖 Decentralized Cab System (CabContract)
+# 🚖 P2PRide: Decentralized Cab System
 
-A Peer-to-Peer ride-hailing platform built on the Ethereum blockchain. This project eliminates traditional middlemen by using smart contracts to manage the entire lifecycle of a ride—from driver registration to automated payment settlements.
+This is a peer-to-peer ride-hailing system that cuts out the middleman. It uses Ethereum smart contracts for money handling and a Node.js backend for the business logic.
 
-## 🌟 Key Features
+## 🏗 How It Works
 
-- **Decentralized Escrow**: Payments are locked in the smart contract when a ride is requested and only released upon successful completion.
-- **Transparent Driver Registry**: Drivers register with their car models and availability status, ensuring full transparency.
-- **Automated Settlements**: Once a driver marks a ride as complete, the funds are instantly transferred to their wallet by the contract logic.
-- **Zero Middlemen**: No central authority controls the data or the money—it's all on-chain.
+The system is split into three main layers:
+
+1.  **Blockchain (`contracts/RideManager.sol`)**: This is the source of truth for money and ride status. It holds the fare in escrow and releases it to the driver only when the ride is done.
+2.  **Backend (`src/`)**: A Node.js server that talks to the blockchain. It handles user accounts, maps out-of-chain data (like pickup addresses) to blockchain IDs, and manages the API for the mobile app.
+3.  **Database (MongoDB)**: Stores off-chain info like user profiles, encrypted keys, and ride history that doesn't need to be on the expensive blockchain.
 
 ## 🛠 Tech Stack
 
-- **Solidity**: Smart contract logic (EVM-compatible).
-- **Hardhat**: Development environment for compiling, testing, and deploying.
-- **Ethers.js**: Library for interacting with the Ethereum blockchain via JavaScript.
-- **Dotenv**: Secure environment variable management.
-- **Vanilla web (HTML/JS)**: Simple frontend for user interaction.
+-   **Solidity & Hardhat**: Smart contract logic and local dev network.
+-   **Node.js & Express**: Backend API.
+-   **Ethers.js**: The bridge between Node.js and the Smart Contract.
+-   **Mongoose & MongoDB**: Off-chain data storage.
+-   **JWT**: Secure user authentication.
 
 ## 🚀 Getting Started
 
-### 1. Prerequisites
-- [Node.js](https://nodejs.org/) installed.
-- A crypto wallet like **MetaMask**.
-
-### 2. Installation
-Clone the repository and install dependencies:
+### 1. Setup
+Install everything first:
 ```bash
 npm install
 ```
 
-### 3. Environment Setup
-Copy the example environment file and add your keys (for testnet deployment):
+### 2. Configure Environment
+Copy the example env file and make sure your details are in `.env`:
 ```bash
 cp .env.example .env
 ```
-Edit `.env` and fill in:
-- `SEPOLIA_RPC_URL`: Your Alchemy/Infura endpoint.
-- `PRIVATE_KEY`: Your wallet's private key.
-- `ETHERSCAN_API_KEY`: For contract verification.
+*Note: For local development, I've already pre-configured `.env` to work with a local Hardhat node.*
 
-### 4. Running Locally
-Start a local Hardhat node in a separate terminal:
+### 3. Start Local Blockchain
+Open a new terminal and run:
 ```bash
 npx hardhat node
 ```
+This gives you local accounts with fake ETH for testing.
 
-Compile the contracts:
-```bash
-npx hardhat compile
-```
-
-Deploy to your local node:
+### 4. Deploy the Contract
+In another terminal, deploy the `RideManager` contract:
 ```bash
 npx hardhat run scripts/deploy.js --network localhost
 ```
+Copy the contract address from the output and update `CONTRACT_ADDRESS` in your `.env`.
 
-### 5. Running Tests
-Ensure everything is working with the automated test suite:
+### 5. Start the Backend
+Make sure you have MongoDB running locally, then start the server:
 ```bash
-npx hardhat test
+node server.js
 ```
 
-## 🏗 Project Structure
+## 📂 Project Structure
 
-- `contracts/cabSystem.sol`: The core smart contract logic.
-- `scripts/deploy.js`: Automation script for deploying the contract.
-- `test/`: Mocha/Chai tests to verify contract behavior.
-- `index.html`: Web interface for interacting with the contract.
-- `hardhat.config.cjs`: Main configuration for the Hardhat environment.
+-   `contracts/`: The Solidity smart contract that handles payments.
+-   `src/models/`: Database schemas for Users and Rides.
+-   `src/services/`: The `blockchainService.js` which is the most important part—it translates API calls into blockchain transactions.
+-   `src/controllers/`: The brains of the API (Auth and Ride logic).
+-   `src/routes/`: API endpoint definitions.
+-   `server.js`: The entry point that ties everything together.
 
-## 🛡 Security Note
-
-This project uses a `.env` file to store sensitive keys. **Never commit your `.env` file to version control.** It is already included in the `.gitignore` for your safety.
+## 🛡 Security
+We store user private keys in the database to automate transactions. For a real production app, these **must** be encrypted. Never share your `.env` file.
 
 ---
-*Built as a Final Year Project to explore the power of decentralized applications (dApps).*
+*Built to show how decentralized finance can fix real-world problems like ride-sharing.*
+
