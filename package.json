@@ -1,17 +1,38 @@
 {
   "name": "cabcontract",
   "version": "1.0.0",
-  "description": "P2P Cab Blockchain Contract",
+  "description": "P2P Cab Blockchain and Backend",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "rimraf dist && tsc",
+    "start": "node dist/src/server.js",
+    "compile": "npx hardhat compile",
+    "deploy": "npx hardhat run scripts/deploy.js --network localhost",
+    "interact": "npx hardhat run scripts/interact.js --network localhost"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "ethers": "^6.10.0",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3"
+  },
   "devDependencies": {
-    "hardhat": "^2.22.0",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "ethers": "^6.10.0"
+    "@types/bcrypt": "^6.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.0.0",
+    "hardhat": "^2.22.0",
+    "rimraf": "^6.1.3",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.0.0"
   }
 }
