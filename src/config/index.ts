@@ -1,10 +1,6 @@
-import { ethers } from 'ethers';
 import dotenv from 'dotenv';
 
 dotenv.config();
-
-const provider = new ethers.JsonRpcProvider(process.env.HARDHAT_RPC_URL);
-const wallet = new ethers.Wallet(process.env.CONTRACT_OWNER_PRIVATE_KEY as string, provider);
 
 const CONTRACT_ABI = [
     "function addMoney(uint256 amount) public",
@@ -16,6 +12,33 @@ const CONTRACT_ABI = [
     "event RideReleased(uint256 indexed rideId, address indexed driver, uint256 amount)"
 ];
 
-const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS as string, CONTRACT_ABI, wallet);
+let _contract: any = null;
 
-export { provider, wallet, contract };
+async function initContract() {
+    if (_contract) return _contract;
+
+    console.log('[CONFIG] Loading ethers...');
+    const { ethers } = await import('ethers');
+
+    const provider = new ethers.JsonRpcProvider(process.env.HARDHAT_RPC_URL);
+    console.log('[CONFIG] Provider connected →', process.env.HARDHAT_RPC_URL);
+
+    const wallet = new ethers.Wallet(process.env.CONTRACT_OWNER_PRIVATE_KEY as string, provider);
+    console.log('[CONFIG] Wallet loaded');
+
+    _contract = new ethers.Contract(process.env.CONTRACT_ADDRESS as string, CONTRACT_ABI, wallet);
+    console.log('[CONFIG] Contract initialized →', process.env.CONTRACT_ADDRESS);
+
+    return _contract;
+}
+
+// Proxy that lazily initializes the contract on first method call
+export const contract = new Proxy({} as any, {
+    get(_target, prop) {
+        if (prop === 'then') return undefined; // prevent Promise detection
+        return async (...args: any[]) => {
+            const c = await initContract();
+            return c[prop](...args);
+        };
+    }
+});

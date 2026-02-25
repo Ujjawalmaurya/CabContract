@@ -16,4 +16,6 @@ export interface Ride {
     fare: number;
     status: 'pending' | 'accepted' | 'started' | 'completed' | 'cancelled';
     txHash?: string;
+    reserveTxHash?: string;
+    releaseTxHash?: string;
 }

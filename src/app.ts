@@ -9,13 +9,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Health check
+app.get('/', (req, res) => {
+    res.send('P2P Cab Backend is running');
+});
+
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/rides', rideRoutes);
-
-app.get('/', (req, res) => {
-    res.send('P2P Cab Backend is running');
-});
 
 export default app;

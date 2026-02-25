@@ -9,6 +9,21 @@ export const users: User[] = [];
 export const register = async (req: Request, res: Response) => {
     const { email, password, role, walletAddress } = req.body;
 
+    // Validation
+    if (!email || !password || !role || !walletAddress) {
+        return res.status(400).json({ message: 'All fields are required: email, password, role, walletAddress' });
+    }
+    if (!['rider', 'driver'].includes(role)) {
+        return res.status(400).json({ message: 'Role must be either rider or driver' });
+    }
+    if (password.length < 4) {
+        return res.status(400).json({ message: 'Password must be at least 4 characters' });
+    }
+    const trimmedWallet = walletAddress?.trim();
+    if (!trimmedWallet || !/^0x[a-fA-F0-9]{40}$/.test(trimmedWallet)) {
+        return res.status(400).json({ message: 'Invalid wallet address format (must be 0x followed by 40 hex characters)' });
+    }
+
     if (users.find(u => u.email === email)) {
         return res.status(400).json({ message: 'User already exists' });
     }
@@ -19,7 +34,7 @@ export const register = async (req: Request, res: Response) => {
         email,
         passwordHash,
         role,
-        walletAddress
+        walletAddress: trimmedWallet
     };
 
     users.push(newUser);
@@ -30,11 +45,17 @@ export const register = async (req: Request, res: Response) => {
         { expiresIn: '24h' }
     );
 
-    res.status(201).json({ token, user: { email, role, walletAddress } });
+    console.log(`[AUTH] Registered: ${email} as ${role} (wallet: ${walletAddress})`);
+    res.status(201).json({ token, user: { id: newUser.id, email, role, walletAddress } });
 };
 
 export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+    }
+
     const user = users.find(u => u.email === email);
 
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
@@ -47,5 +68,6 @@ export const login = async (req: Request, res: Response) => {
         { expiresIn: '24h' }
     );
 
-    res.json({ token, user: { email: user.email, role: user.role, walletAddress: user.walletAddress } });
+    console.log(`[AUTH] Login: ${email} (${user.role})`);
+    res.json({ token, user: { id: user.id, email: user.email, role: user.role, walletAddress: user.walletAddress } });
 };
