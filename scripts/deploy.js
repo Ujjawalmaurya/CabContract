@@ -1,4 +1,6 @@
 const hre = require("hardhat");
+const fs = require("fs");
+const path = require("path");
 
 async function main() {
     console.log("\n========================================");
@@ -12,8 +14,25 @@ async function main() {
 
     const contractAddress = await rideEscrow.getAddress();
     console.log(`✅ RideEscrow deployed to: ${contractAddress}`);
-    console.log(`\n→ Copy this to your .env file:`);
-    console.log(`  CONTRACT_ADDRESS=${contractAddress}\n`);
+
+    // Automatically update .env file
+    const envPath = path.join(__dirname, "..", ".env");
+    if (fs.existsSync(envPath)) {
+        let envContent = fs.readFileSync(envPath, "utf8");
+        const regex = /^CONTRACT_ADDRESS=.*$/m;
+
+        if (regex.test(envContent)) {
+            envContent = envContent.replace(regex, `CONTRACT_ADDRESS=${contractAddress}`);
+        } else {
+            envContent += `\nCONTRACT_ADDRESS=${contractAddress}\n`;
+        }
+
+        fs.writeFileSync(envPath, envContent);
+        console.log(`\n📝 Updated CONTRACT_ADDRESS in .env to: ${contractAddress}`);
+    } else {
+        console.log(`\n⚠️  .env file not found at ${envPath}. Please update it manually.`);
+        console.log(`→ CONTRACT_ADDRESS=${contractAddress}\n`);
+    }
 
     // Print test accounts
     const signers = await hre.ethers.getSigners();

@@ -2,9 +2,14 @@ import app from './app';
 import dotenv from 'dotenv';
 import os from 'os';
 
+import { connectDB } from './config/db';
+
 dotenv.config();
 
-const PORT = Number(process.env.PORT) || 5000;
+// Connect to MongoDB
+connectDB();
+
+const PORT = Number(process.env.PORT) || 1205;
 const HOST = process.env.HOST || '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
@@ -23,7 +28,7 @@ app.listen(PORT, HOST, () => {
         }
     }
 
-    console.log(`\n  API Base:  http://<YOUR_IP>:${PORT}/api`);
-    console.log('  ↑ Put this in cab/.env as API_URL');
+    console.log(`\n  API Base:  http://<YOUR_IP>:${PORT}/api/`);
+    console.log('  ↑ Put this in cab/.env as API_URL (Note the trailing slash)');
     console.log('========================================\n');
 });

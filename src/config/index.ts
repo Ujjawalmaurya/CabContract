@@ -3,8 +3,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const CONTRACT_ABI = [
-    "function addMoney(uint256 amount) public",
-    "function reserveForRide(uint256 rideId, address driver, uint256 amount) public",
+    "function addMoney(address user, uint256 amount) public",
+    "function reserveForRide(uint256 rideId, address user, address driver, uint256 amount) public",
     "function releaseToDriver(uint256 rideId) public",
     "function getBalance(address user) public view returns (uint256)",
     "event MoneyAdded(address indexed user, uint256 amount)",

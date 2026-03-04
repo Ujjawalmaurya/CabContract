@@ -9,7 +9,10 @@ export const authMiddleware = (req: any, res: Response, next: NextFunction) => {
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+        const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string);
+        if (decoded.walletAddress) {
+            decoded.walletAddress = decoded.walletAddress.toLowerCase();
+        }
         req.user = decoded;
         next();
     } catch (err) {

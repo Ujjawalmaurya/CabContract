@@ -3,8 +3,9 @@ import { contract } from '../config';
 
 export const getBalance = async (req: any, res: Response) => {
     try {
-        const balance = await contract.getBalance(req.user.walletAddress);
-        console.log(`[WALLET] Balance check: ${req.user.email} -> ₹${balance}`);
+        const wallet = req.user.walletAddress.toLowerCase();
+        const balance = await contract.getBalance(wallet);
+        console.log(`[WALLET] Balance check: ${req.user.email} (${wallet}) -> ₹${balance}`);
         res.json({ balance: balance.toString() });
     } catch (err: any) {
         console.error(`[WALLET] ✗ Failed to fetch balance for ${req.user.email}:`, err.message);
@@ -21,10 +22,12 @@ export const addMoney = async (req: any, res: Response) => {
     }
 
     try {
-        const tx = await contract.addMoney(BigInt(amount));
+        const wallet = req.user.walletAddress.toLowerCase();
+        console.log(`[WALLET] Adding funds for ${req.user.email} (${wallet}): ₹${amount}`);
+        const tx = await contract.addMoney(wallet, BigInt(amount));
         const receipt = await tx.wait();
 
-        const newBalance = await contract.getBalance(req.user.walletAddress);
+        const newBalance = await contract.getBalance(wallet);
         console.log(`[WALLET] ${req.user.email} added ₹${amount} | txHash: ${receipt.hash}`);
 
         res.json({ txHash: tx.hash, balance: newBalance.toString() });
