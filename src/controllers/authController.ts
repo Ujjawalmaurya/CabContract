@@ -43,7 +43,16 @@ export const register = async (req: Request, res: Response) => {
         );
 
         console.log(`[AUTH] Registered: ${email} as ${role} (wallet: ${walletAddress})`);
-        res.status(201).json({ token, user: { id: newUser._id, email, role, walletAddress } });
+        res.status(201).json({ 
+            token, 
+            user: { 
+                id: newUser._id, 
+                email, 
+                role, 
+                walletAddress: newUser.walletAddress,
+                verificationStatus: newUser.verificationStatus 
+            } 
+        });
     } catch (err: any) {
         console.error('[AUTH] Registration error:', err.message);
         res.status(500).json({ message: 'Registration failed', error: err.message });
@@ -77,9 +86,37 @@ export const login = async (req: Request, res: Response) => {
         );
 
         console.log(`[AUTH] Login: ${email} (${user.role})`);
-        res.json({ token, user: { id: user._id, email: user.email, role: user.role, walletAddress: user.walletAddress } });
+        res.json({ 
+            token, 
+            user: { 
+                id: user._id, 
+                email: user.email, 
+                role: user.role, 
+                walletAddress: user.walletAddress,
+                verificationStatus: user.verificationStatus 
+            } 
+        });
     } catch (err: any) {
         console.error('[AUTH] Login error:', err.message);
         res.status(500).json({ message: 'Login failed', error: err.message });
+    }
+};
+
+export const getMe = async (req: any, res: Response) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.json({
+            id: user._id,
+            email: user.email,
+            role: user.role,
+            walletAddress: user.walletAddress,
+            verificationStatus: user.verificationStatus
+        });
+    } catch (err: any) {
+        console.error('[AUTH] getMe error:', err.message);
+        res.status(500).json({ message: 'Failed to retrieve profile', error: err.message });
     }
 };

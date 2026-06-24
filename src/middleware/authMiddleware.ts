@@ -1,5 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { env } from '../config/env';
 
 export const authMiddleware = (req: any, res: Response, next: NextFunction) => {
     const token = req.headers.authorization?.split(' ')[1];
@@ -9,7 +10,7 @@ export const authMiddleware = (req: any, res: Response, next: NextFunction) => {
     }
 
     try {
-        const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string);
+        const decoded: any = jwt.verify(token, env.JWT_SECRET);
         if (decoded.walletAddress) {
             decoded.walletAddress = decoded.walletAddress.toLowerCase();
         }
@@ -20,10 +21,12 @@ export const authMiddleware = (req: any, res: Response, next: NextFunction) => {
     }
 };
 
-export const roleMiddleware = (role: 'rider' | 'driver') => {
+export const roleMiddleware = (...allowedRoles: ('rider' | 'user' | 'driver' | 'hospital' | 'admin')[]) => {
     return (req: any, res: Response, next: NextFunction) => {
-        if (req.user.role !== role) {
-            return res.status(403).json({ message: `Access denied. ${role} only.` });
+        if (!req.user || !allowedRoles.includes(req.user.role)) {
+            return res.status(403).json({ 
+                message: `Access denied. Required roles: ${allowedRoles.join(', ')} (You have: ${req.user?.role || 'none'})` 
+            });
         }
         next();
     };

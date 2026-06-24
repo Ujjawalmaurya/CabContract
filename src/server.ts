@@ -1,34 +1,59 @@
+// Validate environment variables first before loading any config
+import { env } from './config/env';
 import app from './app';
-import dotenv from 'dotenv';
-import os from 'os';
-
+import http from 'http';
+import mongoose from 'mongoose';
 import { connectDB } from './config/db';
-
-dotenv.config();
+import { initSocketServer } from './socket/socketServer';
+import { logger } from './utils/logger';
 
 // Connect to MongoDB
 connectDB();
 
-const PORT = Number(process.env.PORT) || 1205;
-const HOST = process.env.HOST || '0.0.0.0';
+const PORT = env.PORT;
+const HOST = '0.0.0.0';
 
-app.listen(PORT, HOST, () => {
-    console.log('\n========================================');
-    console.log('  P2P Cab Backend');
-    console.log('========================================');
-    console.log(`  Local:    http://localhost:${PORT}`);
+const server = http.createServer(app);
 
-    // Print all network interface IPs
-    const nets = os.networkInterfaces();
-    for (const name of Object.keys(nets)) {
-        for (const net of nets[name]!) {
-            if (net.family === 'IPv4' && !net.internal) {
-                console.log(`  Network:  http://${net.address}:${PORT}  (${name})`);
-            }
-        }
-    }
+// Initialize Socket.io server
+initSocketServer(server);
 
-    console.log(`\n  API Base:  http://<YOUR_IP>:${PORT}/api/`);
-    console.log('  ↑ Put this in cab/.env as API_URL (Note the trailing slash)');
-    console.log('========================================\n');
+server.listen(PORT, HOST, () => {
+    logger.info('========================================');
+    logger.info('  🚨 AmbulanceChain Dispatch Server');
+    logger.info('========================================');
+    logger.info(`  Local:    http://localhost:${PORT}`);
+    logger.info(`  API:      http://localhost:${PORT}/api`);
+    logger.info(`  Socket:   ws://localhost:${PORT}`);
+    logger.info('========================================');
 });
+
+// Graceful shutdown handling
+const gracefulShutdown = (signal: string) => {
+    logger.info(`[SERVER] Received ${signal}. Starting graceful shutdown...`);
+
+    // Stop accepting new connections
+    server.close(async () => {
+        logger.info('[SERVER] HTTP server closed.');
+
+        try {
+            // Close DB connection
+            await mongoose.connection.close();
+            logger.info('[DB] MongoDB connection closed.');
+            process.exit(0);
+        } catch (err: any) {
+            logger.error(`[SERVER] Error during DB close: ${err.message}`);
+            process.exit(1);
+        }
+    });
+
+    // Timeout force shutdown in 10s
+    setTimeout(() => {
+        logger.error('[SERVER] Force shutdown triggered after timeout.');
+        process.exit(1);
+    }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+export default server;

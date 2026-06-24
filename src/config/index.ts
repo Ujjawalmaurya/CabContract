@@ -4,12 +4,16 @@ dotenv.config();
 
 const CONTRACT_ABI = [
     "function addMoney(address user, uint256 amount) public",
-    "function reserveForRide(uint256 rideId, address user, address driver, uint256 amount) public",
-    "function releaseToDriver(uint256 rideId) public",
+    "function lockFare(bytes32 rideId, address rider, address driver, uint256 amount) public",
+    "function releaseToDriver(bytes32 rideId) public",
+    "function refund(bytes32 rideId) public",
+    "function markInsuranceCovered(bytes32 rideId) public",
     "function getBalance(address user) public view returns (uint256)",
     "event MoneyAdded(address indexed user, uint256 amount)",
-    "event RideReserved(uint256 indexed rideId, address indexed rider, address indexed driver, uint256 amount)",
-    "event RideReleased(uint256 indexed rideId, address indexed driver, uint256 amount)"
+    "event RideBooked(bytes32 indexed rideId, address indexed user, uint256 amount)",
+    "event FareReleased(bytes32 indexed rideId, address indexed driver)",
+    "event InsuranceCovered(bytes32 indexed rideId)",
+    "event FareRefunded(bytes32 indexed rideId, address indexed rider)"
 ];
 
 let _contract: any = null;

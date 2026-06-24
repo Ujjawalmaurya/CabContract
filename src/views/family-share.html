@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Ambulance Tracking - AmbulanceChain</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff3b30;
+            --primary-bg: #ff3b301a;
+            --success: #34c759;
+            --success-bg: #34c7591a;
+            --warning: #ff9500;
+            --warning-bg: #ff95001a;
+            --info: #007aff;
+            --info-bg: #007aff1a;
+            --dark: #1c1c1e;
+            --light: #f2f2f7;
+            --gray: #8e8e93;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --blur: saturate(180%) blur(20px);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --light: #1c1c1e;
+                --dark: #f2f2f7;
+                --card-bg: rgba(28, 28, 30, 0.8);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #map {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Floating UI */
+        .overlay {
+            position: absolute;
+            left: 0;
+            right: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .header {
+            top: 0;
+            padding: 16px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0));
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 20px;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            pointer-events: auto;
+            animation: pulse 2s infinite;
+        }
+
+        .status-enroute { background-color: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning); }
+        .status-arrived { background-color: var(--info-bg); color: var(--info); border: 1px solid var(--info); }
+        .status-transporting { background-color: var(--primary-bg); color: var(--primary); border: 1px solid var(--primary); }
+        .status-completed { background-color: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+
+        .footer-card {
+            bottom: 0;
+            padding: 20px;
+            pointer-events: auto;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 -8px 32px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .eta-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .eta-title {
+            font-size: 14px;
+            color: var(--gray);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .eta-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .ambulance-details {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 0;
+            border-top: 1px solid rgba(128,128,128,0.2);
+            border-bottom: 1px solid rgba(128,128,128,0.2);
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: var(--primary-bg);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        .driver-info {
+            flex: 1;
+        }
+
+        .driver-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .vehicle-number {
+            font-size: 13px;
+            color: var(--gray);
+            font-weight: 600;
+        }
+
+        .ambulance-type {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background-color: var(--primary-bg);
+            color: var(--primary);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 14px;
+            border: none;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+            background-color: #d82e25;
+        }
+
+        /* Pulse Animation */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        /* Network Status */
+        .conn-status {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: none;
+            z-index: 100;
+        }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div id="conn-status" class="conn-status">Reconnecting...</div>
+
+    <div class="overlay header">
+        <div class="logo">🚨 Ambulance<span>Chain</span></div>
+        <div id="status-badge" class="status-badge status-enroute">Connecting...</div>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="overlay footer-card">
+        <div class="card">
+            <div class="eta-section">
+                <div>
+                    <div class="eta-title">Estimated Arrival</div>
+                    <div id="eta-txt">Calculating...</div>
+                </div>
+                <div id="eta-val" class="eta-value">-- min</div>
+            </div>
+
+            <div class="ambulance-details">
+                <div class="avatar" id="avatar-initial">D</div>
+                <div class="driver-info">
+                    <div class="driver-name" id="driver-name">Loading Driver...</div>
+                    <div class="vehicle-number" id="vehicle-number">Loading...</div>
+                </div>
+                <div class="ambulance-type" id="ambulance-type">Basic</div>
+            </div>
+
+            <div class="actions">
+                <a href="tel:112" class="btn btn-primary" id="call-btn">
+                    📞 Call Driver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Replace dynamic script block during express send -->
+    <script>
+        const familyShareToken = window.location.pathname.split('/').pop();
+        let map, driverMarker, pickupMarker, destinationMarker;
+        let socket;
+        let retryDelay = 1000;
+        let pickupCoords = null;
+
+        async function init() {
+            try {
+                // Fetch ride info via token
+                const response = await fetch(`/api/share/${familyShareToken}`);
+                if (!response.ok) {
+                    throw new Error('Failed to retrieve ride details');
+                }
+                const data = await response.json();
+                
+                // Set text info
+                document.getElementById('driver-name').innerText = data.driverName || 'Verified Driver';
+                document.getElementById('vehicle-number').innerText = data.vehicleNumber || 'UP32AB1234';
+                document.getElementById('ambulance-type').innerText = data.ambulanceType || 'Basic';
+                document.getElementById('avatar-initial').innerText = (data.driverName || 'D').charAt(0).toUpperCase();
+                document.getElementById('call-btn').href = `tel:${data.driverContact || '112'}`;
+
+                // Set status badge
+                updateStatusBadge(data.status);
+
+                // Set coordinates
+                const [pLat, pLng] = data.pickup.split(',').map(parseFloat);
+                pickupCoords = { lat: pLat, lng: pLng };
+
+                // Initialize Google Map
+                const mapOptions = {
+                    zoom: 15,
+                    center: pickupCoords,
+                    disableDefaultUI: true,
+                    styles: [
+                        {
+                            "featureType": "poi",
+                            "elementType": "labels",
+                            "stylers": [{ "visibility": "off" }]
+                        }
+                    ]
+                };
+
+                map = new google.maps.Map(document.getElementById('map'), mapOptions);
+
+                // Add pickup marker
+                pickupMarker = new google.maps.Marker({
+                    position: pickupCoords,
+                    map: map,
+                    title: 'Pickup Location',
+                    icon: {
+                        url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
+                        scaledSize: new google.maps.Size(40, 40)
+                    }
+                });
+
+                // Initialize socket connection
+                connectSocket(data.rideId);
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('eta-txt').innerText = 'Error loading tracking data';
+            }
+        }
+
+        function updateStatusBadge(status) {
+            const badge = document.getElementById('status-badge');
+            badge.className = 'status-badge';
+            
+            let statusText = 'Enroute';
+            if (status === 'accepted') {
+                badge.classList.add('status-enroute');
+                statusText = 'Enroute';
+            } else if (status === 'arrived') {
+                badge.classList.add('status-arrived');
+                statusText = 'Arrived';
+            } else if (status === 'started' || status === 'transporting') {
+                badge.classList.add('status-transporting');
+                statusText = 'Transporting';
+            } else if (status === 'completed') {
+                badge.classList.add('status-completed');
+                statusText = 'Completed';
+                document.getElementById('eta-val').innerText = '0 min';
+                document.getElementById('eta-txt').innerText = 'Ambulance Completed';
+            } else {
+                badge.classList.add('status-enroute');
+                statusText = status;
+            }
+            badge.innerText = statusText;
+        }
+
+        function connectSocket(rideId) {
+            socket = io({
+                auth: {
+                    token: familyShareToken
+                },
+                reconnection: false // Manual reconnect logic
+            });
+
+            socket.on('connect', () => {
+                document.getElementById('conn-status').style.display = 'none';
+                retryDelay = 1000; // Reset backoff
+                console.log('Socket connected');
+                
+                // Join ride room
+                socket.emit('ride:join', { rideId });
+            });
+
+            socket.on('disconnect', () => {
+                showReconnecting();
+                triggerReconnect(rideId);
+            });
+
+            socket.on('connect_error', () => {
+                showReconnecting();
+                triggerReconnect(rideId);
+            });
+
+            // Listen for location updates
+            socket.on('location:update', (payload) => {
+                const { lat, lng, heading } = payload;
+                const driverPos = { lat, lng };
+
+                // Update marker
+                if (!driverMarker) {
+                    driverMarker = new google.maps.Marker({
+                        position: driverPos,
+                        map: map,
+                        title: 'Ambulance',
+                        icon: {
+                            path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                            scale: 6,
+                            fillColor: '#ff3b30',
+                            fillOpacity: 1,
+                            strokeWeight: 2,
+                            strokeColor: '#ffffff',
+                            rotation: heading || 0
+                        }
+                    });
+                } else {
+                    driverMarker.setPosition(driverPos);
+                    // Rotate marker icon using heading
+                    const icon = driverMarker.getIcon();
+                    if (icon && typeof icon === 'object') {
+                        icon.rotation = heading || 0;
+                        driverMarker.setIcon(icon);
+                    }
+                }
+
+                // Center map to driver & pickup bounds
+                const bounds = new google.maps.LatLngBounds();
+                bounds.extend(pickupCoords);
+                bounds.extend(driverPos);
+                map.fitBounds(bounds, 80); // padding
+
+                // Recalculate ETA (Haversine + Simple Traffic Factor)
+                const distanceKm = getHaversineDistance(driverPos.lat, driverPos.lng, pickupCoords.lat, pickupCoords.lng);
+                const etaMinutes = Math.max(Math.round((distanceKm / 40) * 60), 1);
+                
+                document.getElementById('eta-val').innerText = `${etaMinutes} min`;
+                document.getElementById('eta-txt').innerText = `Distance: ${distanceKm.toFixed(1)} km`;
+            });
+
+            // Listen for status updates
+            socket.on('status:update', (payload) => {
+                updateStatusBadge(payload.status);
+            });
+        }
+
+        function showReconnecting() {
+            document.getElementById('conn-status').style.display = 'block';
+        }
+
+        function triggerReconnect(rideId) {
+            setTimeout(() => {
+                retryDelay = Math.min(retryDelay * 2, 30000); // Max 30s
+                connectSocket(rideId);
+            }, retryDelay);
+        }
+
+        function getHaversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // Initialize on Google Maps Script load
+        window.onload = () => {
+            // Load map script dynamically using KEY injected from server
+            const script = document.createElement('script');
+            // Server replaces __GMAPS_KEY__ before rendering
+            script.src = `https://maps.googleapis.com/maps/api/js?key=__GMAPS_KEY__`;
+            script.async = true;
+            script.defer = true;
+            script.onload = init;
+            document.head.appendChild(script);
+        };
+    </script>
+</body>
+</html>
